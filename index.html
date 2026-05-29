@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>10 Lives Studios — Email Signature Builder</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#171a21; --panel2:#1d212b; --border:#2a2f3a;
+    --text:#e7e9ee; --muted:#9aa3b2; --accent:#e8b730; --accent2:#3b6fd4;
+    --ok:#2f9e60; --radius:12px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);}
+  header{padding:18px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;position:sticky;top:0;background:rgba(15,17,21,.92);backdrop-filter:blur(8px);z-index:10}
+  header img{height:34px;width:auto;background:#fff;border-radius:6px;padding:3px}
+  header h1{font-size:16px;margin:0;font-weight:650;letter-spacing:.2px}
+  header .sub{color:var(--muted);font-size:12.5px;margin-top:2px}
+  .wrap{display:grid;grid-template-columns:minmax(360px,470px) 1fr;gap:0;min-height:calc(100vh - 71px)}
+  @media(max-width:900px){.wrap{grid-template-columns:1fr}}
+  .form{padding:22px 24px;border-right:1px solid var(--border);overflow-y:auto}
+  .preview{padding:28px;background:#20232b;display:flex;flex-direction:column;gap:18px}
+  .group{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px 16px 6px;margin-bottom:16px}
+  .group.locked{opacity:.92}
+  .group h2{font-size:11.5px;text-transform:uppercase;letter-spacing:.9px;color:var(--muted);margin:0 0 14px;font-weight:650;display:flex;align-items:center;gap:8px}
+  label{display:block;font-size:12px;color:var(--muted);margin:0 0 5px}
+  input[type=text],input[type=email],select,textarea{width:100%;background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 11px;font-size:13.5px;margin-bottom:13px;font-family:inherit}
+  textarea{min-height:64px;resize:vertical;line-height:1.4}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent2)}
+  input:disabled,select:disabled,textarea:disabled{opacity:.5;cursor:not-allowed}
+  .row{display:grid;grid-template-columns:120px 1fr auto;gap:8px;align-items:start}
+  .row .lbl,.row input{margin-bottom:9px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .chk{display:flex;align-items:flex-start;gap:9px;margin-bottom:11px;cursor:pointer}
+  .chk input{margin-top:2px}
+  .chk .txt{font-size:13px;color:var(--text)}
+  .btn{appearance:none;border:1px solid var(--border);background:var(--panel2);color:var(--text);padding:9px 13px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;font-weight:550}
+  .btn:hover{border-color:var(--accent2)}
+  .btn.primary{background:var(--accent2);border-color:var(--accent2);color:#fff}
+  .btn.primary:hover{filter:brightness(1.08)}
+  .btn.ghost{background:transparent}
+  .btn.sm{padding:6px 9px;font-size:12px}
+  .btn.del{color:#e57373;border-color:transparent;background:transparent;padding:6px 8px}
+  .btn.warn{color:#e0a33a;border-color:#5a4a25}
+  .actions{display:flex;gap:10px;flex-wrap:wrap}
+  .preview-card{background:#fff;border-radius:10px;padding:26px 28px;box-shadow:0 10px 30px rgba(0,0,0,.25);overflow:auto;transition:background .2s}
+  .preview-card.dark{background:#121212}
+  .preview-label{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:12px;gap:12px;flex-wrap:wrap}
+  .seg{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+  .seg button{background:var(--panel2);color:var(--muted);border:0;padding:5px 11px;font-size:12px;cursor:pointer;font-family:inherit}
+  .seg button.on{background:var(--accent2);color:#fff}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ok);color:#fff;padding:11px 20px;border-radius:10px;font-size:13.5px;font-weight:600;opacity:0;transition:.25s;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,.3);z-index:50}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .hint{font-size:11.5px;color:var(--muted);line-height:1.5;margin:2px 0 12px}
+  .hint b{color:var(--text)}
+  .hint a{color:var(--accent2)}
+  .swatch{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+  .swatch input[type=color]{width:38px;height:30px;padding:0;border:1px solid var(--border);border-radius:6px;background:none;cursor:pointer}
+  .swatch input[type=color]:disabled{opacity:.5}
+  .swatch span{font-size:12.5px}
+  .addbtn{margin:2px 0 14px}
+  .steps{counter-reset:s;list-style:none;padding:0;margin:6px 0 0;color:var(--muted);font-size:12.5px;line-height:1.7}
+  .steps li{counter-increment:s;padding-left:26px;position:relative;margin-bottom:4px}
+  .steps li::before{content:counter(s);position:absolute;left:0;top:0;width:18px;height:18px;background:var(--accent2);color:#fff;border-radius:50%;font-size:11px;display:flex;align-items:center;justify-content:center;font-weight:700}
+  .resolved{font-size:11px;color:var(--muted);margin:-4px 0 12px;word-break:break-all;line-height:1.4}
+  .resolved b{color:var(--text);font-weight:600}
+  details{margin-bottom:14px}
+  summary{cursor:pointer;font-size:12.5px;color:var(--muted)}
+  .pill{font-size:9.5px;font-weight:700;letter-spacing:.5px;background:var(--accent2);color:#fff;padding:2px 6px;border-radius:20px;text-transform:uppercase}
+  .pill.lock{background:#5a4a25;color:#f0c970}
+  .banner{background:linear-gradient(90deg,#1d212b,#171a21);border:1px solid var(--border);border-radius:var(--radius);padding:13px 15px;margin-bottom:16px;font-size:12.5px;color:var(--muted);line-height:1.5}
+  .banner b{color:var(--text)}
+  .lockbar{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#1a1d25;border:1px solid var(--border);border-radius:var(--radius);padding:11px 14px;margin-bottom:16px}
+  .lockbar .txt{font-size:12.5px;color:var(--text)}
+  .lockbar .txt small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
+</style>
+</head>
+<body>
+<header>
+  <img id="brandLogo" alt="10 Lives Studios" />
+  <div>
+    <h1>10 Lives Studios — Signature Builder</h1>
+    <div class="sub">The company standard loads automatically — just tweak it to you, then copy into Gmail.</div>
+  </div>
+</header>
+
+<div class="wrap">
+  <!-- ============ FORM ============ -->
+  <div class="form">
+
+    <div class="banner">
+      ▸ You're starting from the <b>10 Lives standard template</b>. Just change your name, title and contact details, copy your signature into Gmail, and you're done — <b>nothing is saved</b>. Hit <b>Start over</b> to clear your changes.
+      <div style="margin-top:10px"><button class="btn sm warn" onclick="resetToStandard()">↺ Start over</button></div>
+    </div>
+
+    <div class="lockbar">
+      <span class="txt">🔒 Brand lock <small>Company info (logo, offices, website, socials, colors) is protected so signatures stay unified. Admins can unlock to edit the standard.</small></span>
+      <label class="chk" style="margin:0"><input type="checkbox" id="lockBrand" onchange="onLockToggle()" /></label>
+    </div>
+
+    <div class="group">
+      <h2>Identity</h2>
+      <label>Full name</label>
+      <input type="text" id="name" placeholder="Your Name" />
+      <div class="two">
+        <div><label>Pronouns (optional)</label><input type="text" id="pronouns" placeholder="she/her" /></div>
+        <div><label>Title</label><input type="text" id="title" placeholder="Your Title" /></div>
+      </div>
+      <label>Second line / department (optional)</label>
+      <input type="text" id="title2" placeholder="e.g. Unscripted Development" />
+      <label>Company line <span id="lockCompany"></span></label>
+      <input type="text" id="company" />
+      <label>Tagline / quote (optional)</label>
+      <input type="text" id="tagline" placeholder="e.g. Bold stories, nine lives at a time." />
+    </div>
+
+    <div class="group">
+      <h2>Phone numbers</h2>
+      <div id="phones"></div>
+      <button class="btn sm ghost addbtn" onclick="addPhone()">+ Add phone</button>
+    </div>
+
+    <div class="group" id="officesGroup">
+      <h2>Offices <span id="lockOffices"></span></h2>
+      <div class="hint">All four offices are part of the standard template. Untick any you don't want on your personal signature.</div>
+      <div id="offices"></div>
+      <button class="btn sm ghost addbtn" id="addOfficeBtn" onclick="addOffice()">+ Add office</button>
+    </div>
+
+    <div class="group">
+      <h2>Links <span id="lockLinks"></span></h2>
+      <label>Website (display text)</label>
+      <input type="text" id="webText" />
+      <label>Website (link URL)</label>
+      <input type="text" id="webUrl" />
+      <label>Email</label>
+      <input type="email" id="email" placeholder="firstname@10livesstudios.com" />
+    </div>
+
+    <div class="group">
+      <h2>Book-a-meeting button <span class="pill">CTA</span></h2>
+      <label class="chk"><input type="checkbox" id="ctaOn" /><span class="txt">Show a “Book a meeting” button</span></label>
+      <div class="two">
+        <div><label>Button label</label><input type="text" id="ctaLabel" placeholder="Book a meeting" /></div>
+        <div><label>Scheduler</label>
+          <select id="ctaType" onchange="ctaHint()">
+            <option value="google">Google Calendar (recommended)</option>
+            <option value="calendly">Calendly</option>
+            <option value="other">Other link</option>
+          </select>
+        </div>
+      </div>
+      <label>Scheduling link URL</label>
+      <input type="text" id="ctaUrl" placeholder="https://calendar.app.google/…" />
+      <div class="hint" id="ctaHelp"></div>
+    </div>
+
+    <div class="group">
+      <h2>Save-my-contact <span class="pill">vCard / QR</span></h2>
+      <label class="chk"><input type="checkbox" id="qrOn" /><span class="txt">Show a QR code people can scan to save my contact</span></label>
+      <div class="hint">The QR encodes a digital business card (name, title, phones, email, website) — scanning it on a phone offers to add you to Contacts. Nothing is hosted; it's built from the fields above.</div>
+      <button class="btn sm ghost" onclick="downloadVcf()">⬇ Download my .vcf (to test)</button>
+    </div>
+
+    <div class="group" id="companySocialGroup">
+      <h2>Company social links <span id="lockSocial"></span> <span style="text-transform:none;letter-spacing:0;font-weight:400">(under the logo)</span></h2>
+      <div id="companySocials"></div>
+      <button class="btn sm ghost addbtn" id="addCompanyBtn" onclick="addSocial('company')">+ Add company link</button>
+    </div>
+
+    <div class="group">
+      <h2>Your personal social links <span style="text-transform:none;letter-spacing:0;font-weight:400">(under your details)</span></h2>
+      <div class="hint">Optional — your own profiles, shown on the right beneath the email line.<br>
+      Enter the <b>full URL</b> (e.g. <b>https://www.instagram.com/yourname/</b>) <b>or just your @handle</b> — a handle is expanded into the right link automatically. The “→ links to” line shows exactly where it points. <b>IMDb</b> is the one exception — paste its full URL.</div>
+      <div id="personalSocials"></div>
+      <button class="btn sm ghost addbtn" onclick="addSocial('personal')">+ Add personal link</button>
+    </div>
+
+    <div class="group">
+      <h2>Promo banner <span class="pill">Campaign</span></h2>
+      <label class="chk"><input type="checkbox" id="bannerOn" /><span class="txt">Show a banner image below the signature</span></label>
+      <div class="hint">Great for a current premiere or show. Upload a wide image (it appears full-width under the signature) and add a click-through link.</div>
+      <label>Banner image</label>
+      <input type="file" id="bannerFile" accept="image/*" onchange="loadBanner(this)" style="font-size:12px;margin-bottom:8px" />
+      <div id="bannerPrev"></div>
+      <div class="two">
+        <div><label>Click-through link</label><input type="text" id="bannerUrl" placeholder="https://…" /></div>
+        <div><label>Width (px)</label><input type="text" id="bannerWidth" placeholder="500" /></div>
+      </div>
+      <label>Alt text</label>
+      <input type="text" id="bannerAlt" placeholder="e.g. Watch our new series — premieres Fall 2026" />
+    </div>
+
+    <div class="group">
+      <h2>Headshot &amp; logo</h2>
+      <label>Show on the left</label>
+      <select id="leftElement"><option value="logo">Logo only</option><option value="headshot">Headshot only</option><option value="both">Headshot + logo</option></select>
+      <label>Headshot (optional)</label>
+      <input type="file" id="headshotFile" accept="image/*" onchange="loadHeadshot(this)" style="font-size:12px;margin-bottom:8px" />
+      <div id="headshotPrev"></div>
+      <label>Logo treatment <span id="lockLogo"></span></label>
+      <select id="logoTreatment">
+        <option value="plate">White plate — safe in light &amp; dark mode (recommended)</option>
+        <option value="transparent">Transparent — clean on light backgrounds only</option>
+      </select>
+      <div class="hint">Your logo is solid black, so it can vanish on dark backgrounds. The <b>white plate</b> keeps it visible everywhere. Use the <b>Light / Dark</b> toggle over the preview to check.</div>
+    </div>
+
+    <div class="group">
+      <h2>Confidentiality footer</h2>
+      <label class="chk"><input type="checkbox" id="disclaimerOn" /><span class="txt">Add a confidentiality disclaimer below the signature</span></label>
+      <textarea id="disclaimer"></textarea>
+    </div>
+
+    <div class="group">
+      <h2>Style</h2>
+      <div class="swatch"><input type="color" id="nameColor" /><span>Name color</span></div>
+      <div class="swatch"><input type="color" id="linkColor" /><span>Phone / address / link color</span></div>
+      <label>Logo size</label>
+      <select id="logoSize"><option value="84">Small</option><option value="104">Medium</option><option value="128">Large</option></select>
+      <details>
+        <summary>Use a hosted logo URL instead of the built-in image</summary>
+        <div class="hint" style="margin-top:10px">For maximum reliability across all email clients, host the logo publicly and paste the URL here. Leave blank to use the embedded logo.</div>
+        <input type="text" id="logoUrl" placeholder="https://…/10lives-logo.png" />
+      </details>
+    </div>
+
+  </div>
+
+  <!-- ============ PREVIEW ============ -->
+  <div class="preview">
+    <div class="preview-label">
+      <span class="seg"><button id="varFull" class="on" onclick="setVariant('full')">Full</button><button id="varCompact" onclick="setVariant('compact')">Reply (compact)</button></span>
+      <span class="seg"><button id="bgLight" class="on" onclick="setBg('light')">Light</button><button id="bgDark" onclick="setBg('dark')">Dark</button></span>
+    </div>
+    <div class="preview-card" id="previewCard">
+      <div id="sigMount"></div>
+    </div>
+
+    <div class="actions">
+      <button class="btn primary" onclick="copyRich()">📋 Copy signature</button>
+      <button class="btn" onclick="openGmailCompose()">✉️ Test in Gmail</button>
+      <button class="btn" onclick="copyHtml()">Copy HTML source</button>
+      <button class="btn" onclick="downloadHtml()">Download .html</button>
+    </div>
+
+    <div class="group" style="margin:6px 0 0">
+      <h2>How to add it in Gmail</h2>
+      <ol class="steps">
+        <li>Click <b>Copy signature</b> above.</li>
+        <li>In Gmail, open <b>Settings (⚙️) → See all settings → General</b>.</li>
+        <li>Scroll to <b>Signature</b>, create or select one, click into the box.</li>
+        <li>Paste (<b>⌘V</b>). The logo, icons and formatting come with it.</li>
+        <li>Scroll down and click <b>Save Changes</b>.</li>
+      </ol>
+      <div class="hint" style="margin-top:12px"><b>Two signatures?</b> Gmail lets you set a different signature for <b>new emails</b> vs <b>replies/forwards</b> (just below the signature box). Use the <b>Full</b> version for new emails and the <b>Reply (compact)</b> version for replies — switch them with the toggle above the preview.</div>
+    </div>
+
+    <details class="group" style="margin:0">
+      <summary style="font-weight:650;color:var(--text)">Other apps: Outlook · Apple Mail · Workspace-wide</summary>
+      <div class="hint" style="margin-top:12px">
+        <b>Outlook (new / web):</b> Settings → Mail → Compose and reply → Email signature → click into the box → paste (⌘V) → Save.<br><br>
+        <b>Apple Mail:</b> Mail → Settings → Signatures → pick the account → create a signature → <b>uncheck</b> “Always match my default message font”, then paste (⌘V).<br><br>
+        <b>Whole-company footer:</b> a Workspace admin can apply one in <b>Admin console → Apps → Gmail → Compliance → Append footer</b> — use <b>Copy HTML source</b> and paste it there.<br><br>
+        Tip: <b>Test in Gmail</b> opens a compose window so you can paste and email it to yourself to see it render in a real inbox.
+      </div>
+    </details>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="assets/logo.js"></script>
+<script src="assets/brands.js"></script>
+<script src="assets/qrcode.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+function esc(s){return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+
+/* ============================================================
+   THE 10 LIVES COMPANY STANDARD — everyone starts here.
+   Personal fields are placeholders; shared fields are filled in.
+   ============================================================ */
+const COMPANY_DEFAULTS = {
+  locked:true,
+  name:"", pronouns:"", title:"", title2:"", company:"10 Lives Studios", tagline:"",
+  webText:"10LivesStudios.com", webUrl:"https://10livesstudios.com", email:"",
+  nameColor:"#e8b730", linkColor:"#222222", logoSize:"104", logoUrl:"", logoTreatment:"plate",
+  leftElement:"logo",
+  ctaOn:false, ctaLabel:"Book a meeting", ctaUrl:"", ctaType:"google",
+  qrOn:false,
+  bannerOn:false, bannerUrl:"", bannerWidth:"500", bannerAlt:"", bannerImg:"",
+  disclaimerOn:false,
+  disclaimer:"This email and any attachments are confidential and intended solely for the named recipient. If you have received it in error, please notify the sender and delete it. © 10 Lives Studios.",
+  phones:[ {label:"Mobile", value:"", tel:""} ],
+  offices:[
+    {label:"Los Angeles Office", value:"100 Wilshire Blvd, Ste 700 Santa Monica, CA 90401", on:true},
+    {label:"Nashville Office",   value:"1900 Church St, Ste 360, Nashville, TN 37203", on:true},
+    {label:"NYC Office",         value:"228 Park Ave S, New York, NY 10003", on:true},
+    {label:"London Office",      value:"124 City Road, London, EC1V 2NX", on:true},
+  ],
+  companySocials:[
+    {platform:"instagram", url:"https://www.instagram.com/10livesstudios/", on:true},
+    {platform:"vimeo",     url:"https://vimeo.com/10livesstudios", on:true},
+    {platform:"facebook",  url:"https://www.facebook.com/10livescontent/", on:true},
+    {platform:"linkedin",  url:"https://www.linkedin.com/company/10livesstudios", on:true},
+    {platform:"youtube",   url:"https://www.youtube.com/channel/UC5tyhsKqWc2UPEUyayP8Gpg", on:true},
+  ],
+  personalSocials:[],
+  headshot:"",
+};
+
+// mutable state
+let phones=[], offices=[], companySocials=[], personalSocials=[], headshot="", bannerImg="";
+let variant="full";
+const TEXTF=["name","pronouns","title","title2","company","tagline","webText","webUrl","email",
+  "nameColor","linkColor","logoSize","logoUrl","logoTreatment","leftElement","ctaLabel","ctaUrl","ctaType",
+  "bannerUrl","bannerWidth","bannerAlt","disclaimer"];
+const CHECKF=["ctaOn","qrOn","bannerOn","disclaimerOn"];
+// fields disabled when brand lock is on
+const LOCK_INPUTS=["company","webText","webUrl","nameColor","linkColor","logoTreatment","logoUrl"];
+
+if (window.LOGO_DATA_URI) $("brandLogo").src = window.LOGO_DATA_URI;
+
+/* ---------- logo variants (transparent + white) ---------- */
+let LOGO_VARIANTS = { original: window.LOGO_DATA_URI||"", transparent:null, white:null };
+function processLogo(done){
+  if(!window.LOGO_DATA_URI){ done&&done(); return; }
+  const img=new Image();
+  img.onload=function(){
+    const w=img.naturalWidth,h=img.naturalHeight;
+    const c=document.createElement("canvas");c.width=w;c.height=h;const x=c.getContext("2d");
+    x.drawImage(img,0,0); const id=x.getImageData(0,0,w,h),d=id.data;
+    const c2=document.createElement("canvas");c2.width=w;c2.height=h;const x2=c2.getContext("2d");
+    const id2=x2.createImageData(w,h),d2=id2.data;
+    for(let i=0;i<d.length;i+=4){
+      const near=d[i]>235&&d[i+1]>235&&d[i+2]>235;
+      if(near) d[i+3]=0;
+      d2[i]=d2[i+1]=d2[i+2]=255; d2[i+3]= near?0:255;
+    }
+    x.putImageData(id,0,0); x2.putImageData(id2,0,0);
+    LOGO_VARIANTS.transparent=c.toDataURL("image/png");
+    LOGO_VARIANTS.white=c2.toDataURL("image/png");
+    done&&done();
+  };
+  img.onerror=function(){ done&&done(); };
+  img.src=window.LOGO_DATA_URI;
+}
+
+/* ---------- lock helpers ---------- */
+function isLocked(){ return $("lockBrand").checked; }
+function lockBadge(){ return isLocked()?'<span class="pill lock">🔒 locked</span>':''; }
+function applyLock(){
+  const on=isLocked();
+  LOCK_INPUTS.forEach(id=>$(id).disabled=on);
+  $("addOfficeBtn").style.display=on?"none":"";
+  $("addCompanyBtn").style.display=on?"none":"";
+  ["lockCompany","lockLinks","lockLogo","lockOffices","lockSocial"].forEach(id=>$(id).innerHTML=lockBadge());
+}
+function onLockToggle(){ renderOffices(); renderSocials("company"); applyLock(); build(); }
+
+/* ---------- editable lists ---------- */
+function renderPhones(){
+  $("phones").innerHTML="";
+  phones.forEach((p,i)=>{
+    const r=document.createElement("div"); r.className="row";
+    r.innerHTML=`
+      <input type="text" class="lbl" value="${esc(p.label)}" oninput="phones[${i}].label=this.value;build()" placeholder="Label"/>
+      <input type="text" value="${esc(p.value)}" oninput="phones[${i}].value=this.value;phones[${i}].tel=this.value.replace(/[^+0-9]/g,'');build()" placeholder="Number"/>
+      <button class="btn del" onclick="phones.splice(${i},1);renderPhones();build()">✕</button>`;
+    $("phones").appendChild(r);
+  });
+}
+function renderOffices(){
+  const lock=isLocked(); $("offices").innerHTML="";
+  offices.forEach((o,i)=>{
+    const wrap=document.createElement("div");
+    wrap.innerHTML=`
+      <label class="chk">
+        <input type="checkbox" ${o.on?"checked":""} onchange="offices[${i}].on=this.checked;build()"/>
+        <span class="txt" style="width:100%">
+          <input type="text" value="${esc(o.label)}" ${lock?"disabled":""} oninput="offices[${i}].label=this.value;build()" placeholder="Label" style="margin-bottom:6px"/>
+          <input type="text" value="${esc(o.value)}" ${lock?"disabled":""} oninput="offices[${i}].value=this.value;build()" placeholder="Address"/>
+        </span>
+        ${lock?"":`<button class="btn del" onclick="offices.splice(${i},1);renderOffices();build()">✕</button>`}
+      </label>`;
+    $("offices").appendChild(wrap);
+  });
+}
+function addPhone(){ phones.push({label:"Phone",value:"",tel:""}); renderPhones(); build(); }
+function addOffice(){ offices.push({label:"Office",value:"",on:true}); renderOffices(); build(); }
+
+/* ---------- brand icons ---------- */
+const ICON_COLOR="#222222"; const _iconCache={};
+function roundRect(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
+function iconDataUri(platform){
+  const b=window.BRANDS[platform]; if(!b) return "";
+  if(_iconCache[platform]) return _iconCache[platform];
+  const S=48,c=document.createElement("canvas");c.width=S;c.height=S;const x=c.getContext("2d");
+  roundRect(x,0,0,S,S,S*0.22); x.fillStyle=ICON_COLOR; x.fill();
+  const pad=S*0.22,s=(S-2*pad)/24; x.save(); x.translate(pad,pad); x.scale(s,s);
+  x.fillStyle="#fff"; x.fill(new Path2D(b.path)); x.restore();
+  return _iconCache[platform]=c.toDataURL("image/png");
+}
+const SOCIAL_BASE={
+  instagram:h=>`https://www.instagram.com/${h}/`, vimeo:h=>`https://vimeo.com/${h}`,
+  facebook:h=>`https://www.facebook.com/${h}`, linkedin:h=>`https://www.linkedin.com/in/${h}`,
+  youtube:h=>`https://www.youtube.com/@${h}`, x:h=>`https://x.com/${h}`,
+  tiktok:h=>`https://www.tiktok.com/@${h}`, threads:h=>`https://www.threads.net/@${h}`, imdb:null,
+};
+function normalizeSocialUrl(platform,raw){
+  let v=(raw||"").trim(); if(!v) return "";
+  if(/^https?:\/\//i.test(v)) return v;
+  v=v.replace(/^@+/,"").replace(/^\/+/,"").replace(/\s+/g,"");
+  const f=SOCIAL_BASE[platform]; return f?f(v):v;
+}
+function platformOptions(sel){ return Object.keys(window.BRANDS).map(k=>`<option value="${k}" ${k===sel?"selected":""}>${window.BRANDS[k].label}</option>`).join(""); }
+
+/* ---------- social editors ---------- */
+function listFor(kind){ return kind==="company"?companySocials:personalSocials; }
+function renderSocials(kind){
+  const lock = (kind==="company") && isLocked();
+  const mount=$(kind+"Socials"),list=listFor(kind); mount.innerHTML="";
+  list.forEach((s,i)=>{
+    const rid=kind+"_resolved_"+i, wrap=document.createElement("div");
+    const r=document.createElement("div"); r.className="row"; r.style.gridTemplateColumns="120px 1fr auto auto";
+    r.innerHTML=`
+      <select ${lock?"disabled":""} onchange="listFor('${kind}')[${i}].platform=this.value;renderSocials('${kind}');build()">${platformOptions(s.platform)}</select>
+      <input type="text" value="${esc(s.url)}" ${lock?"disabled":""} oninput="listFor('${kind}')[${i}].url=this.value;updateResolved('${kind}',${i},'${rid}');build()" placeholder="Full URL or @handle"/>
+      <label class="chk" style="margin:0 4px 0 0" title="Show in signature"><input type="checkbox" ${s.on!==false?"checked":""} onchange="listFor('${kind}')[${i}].on=this.checked;build()"/></label>
+      ${lock?"":`<button class="btn del" onclick="listFor('${kind}').splice(${i},1);renderSocials('${kind}');build()">✕</button>`}`;
+    wrap.appendChild(r);
+    const res=document.createElement("div"); res.id=rid; res.className="resolved"; wrap.appendChild(res);
+    mount.appendChild(wrap); updateResolved(kind,i,rid);
+  });
+}
+function updateResolved(kind,i,rid){
+  const el=document.getElementById(rid); if(!el)return;
+  const s=listFor(kind)[i]; if(!s){el.textContent="";return;}
+  const raw=(s.url||"").trim(); if(!raw){el.innerHTML="";return;}
+  if(s.platform==="imdb" && !/^https?:\/\//i.test(raw)){
+    el.innerHTML='<span style="color:#e0a33a">⚠ IMDb needs the full URL — paste it from the address bar (e.g. https://www.imdb.com/name/nm0000123/).</span>'; return;
+  }
+  el.innerHTML="→ links to <b>"+esc(normalizeSocialUrl(s.platform,raw))+"</b>";
+}
+function addSocial(kind){ listFor(kind).push({platform:"instagram",url:"",on:true}); renderSocials(kind); build(); }
+function socialTable(list,topMargin){
+  const items=list.filter(s=>s.on!==false && (s.url||"").trim() && window.BRANDS[s.platform]);
+  if(!items.length) return "";
+  const cells=items.map(s=>`<td style="padding:0 7px 0 0"><a href="${esc(normalizeSocialUrl(s.platform,s.url))}" style="text-decoration:none"><img src="${iconDataUri(s.platform)}" width="22" height="22" alt="${esc(window.BRANDS[s.platform].label)}" style="display:block;width:22px;height:22px;border:0"/></a></td>`).join("");
+  return `<table cellpadding="0" cellspacing="0" border="0" style="margin-top:${topMargin||12}px"><tr>${cells}</tr></table>`;
+}
+
+/* ---------- image uploads ---------- */
+function readImage(input,maxW,cb){
+  const f=input.files&&input.files[0]; if(!f)return;
+  const fr=new FileReader();
+  fr.onload=e=>{ const img=new Image(); img.onload=()=>cb(img); img.src=e.target.result; };
+  fr.readAsDataURL(f);
+}
+function loadHeadshot(input){
+  readImage(input,0,img=>{
+    const S=200,side=Math.min(img.width,img.height),sx=(img.width-side)/2,sy=(img.height-side)/2;
+    const c=document.createElement("canvas");c.width=S;c.height=S;const x=c.getContext("2d");
+    x.drawImage(img,sx,sy,side,side,0,0,S,S);
+    headshot=c.toDataURL("image/jpeg",0.9); renderHeadshotPrev();
+    if($("leftElement").value==="logo") $("leftElement").value="both";
+    build();
+  });
+}
+function renderHeadshotPrev(){
+  $("headshotPrev").innerHTML = headshot
+    ? `<div style="margin:0 0 12px;display:flex;align-items:center;gap:10px"><img src="${headshot}" style="width:54px;height:54px;border-radius:50%;object-fit:cover"/><button class="btn sm del" onclick="headshot='';renderHeadshotPrev();build()">Remove</button></div>` : "";
+}
+function loadBanner(input){
+  readImage(input,1000,img=>{
+    const maxW=1000, scale=Math.min(1,maxW/img.width), w=Math.round(img.width*scale), h=Math.round(img.height*scale);
+    const c=document.createElement("canvas");c.width=w;c.height=h;const x=c.getContext("2d");
+    x.drawImage(img,0,0,w,h);
+    bannerImg=c.toDataURL("image/jpeg",0.85); renderBannerPrev();
+    if(!$("bannerOn").checked) $("bannerOn").checked=true;
+    build();
+  });
+}
+function renderBannerPrev(){
+  $("bannerPrev").innerHTML = bannerImg
+    ? `<div style="margin:0 0 12px"><img src="${bannerImg}" style="max-width:100%;border-radius:6px;border:1px solid var(--border)"/><div style="margin-top:6px"><button class="btn sm del" onclick="bannerImg='';renderBannerPrev();build()">Remove image</button></div></div>` : "";
+}
+
+/* ---------- CTA ---------- */
+function ctaHint(){
+  const t=$("ctaType").value, el=$("ctaHelp");
+  if(t==="google"){
+    $("ctaUrl").placeholder="https://calendar.app.google/…";
+    el.innerHTML="<b>Best fit for us</b> — built into Google Workspace, shows your real availability, no extra tool. In <b>Google Calendar → Create → Appointment schedule</b>, set your hours, then copy the <b>“Open booking page”</b> link and paste it here.";
+  } else if(t==="calendly"){
+    $("ctaUrl").placeholder="https://calendly.com/yourname/30min";
+    el.innerHTML="Paste your Calendly event link (e.g. <b>calendly.com/yourname/30min</b>). Good if you already use Calendly; Google Calendar appointment schedules are the lighter-weight option since we're on Workspace.";
+  } else {
+    $("ctaUrl").placeholder="https://…"; el.innerHTML="Any booking or scheduling URL.";
+  }
+}
+function ctaButton(){
+  if(!$("ctaOn").checked) return "";
+  const url=$("ctaUrl").value.trim(); const label=($("ctaLabel").value.trim()||"Book a meeting");
+  if(!url) return "";
+  return `<table cellpadding="0" cellspacing="0" border="0" style="margin-top:13px"><tr>
+<td bgcolor="#222222" style="background:#222222;border-radius:6px">
+<a href="${esc(url)}" style="display:inline-block;padding:9px 16px;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:6px">${esc(label)} →</a>
+</td></tr></table>`;
+}
+
+/* ---------- vCard + QR ---------- */
+function vcardString(){
+  const name=($("name").value||"").trim(); const parts=name.split(/\s+/);
+  const last=parts.length>1?parts.pop():""; const first=parts.join(" ");
+  let v="BEGIN:VCARD\nVERSION:3.0\n";
+  v+=`N:${last};${first};;;\nFN:${name}\n`;
+  if($("company").value) v+=`ORG:${$("company").value}\n`;
+  const ti=[$("title").value,$("title2").value].filter(s=>s&&s.trim()).join(", "); if(ti) v+=`TITLE:${ti}\n`;
+  phones.filter(p=>(p.value||"").trim()).forEach(p=>{ v+=`TEL;TYPE=CELL:${p.tel||p.value}\n`; });
+  if($("email").value) v+=`EMAIL;TYPE=WORK:${$("email").value}\n`;
+  if($("webUrl").value) v+=`URL:${$("webUrl").value}\n`;
+  v+="END:VCARD"; return v;
+}
+function qrDataUri(text){ try{ const t=qrcode(0,'M'); t.addData(text); t.make(); return t.createDataURL(4,8);}catch(e){return "";} }
+function qrBlock(){
+  if(!$("qrOn").checked) return "";
+  const uri=qrDataUri(vcardString()); if(!uri) return "";
+  return `<table cellpadding="0" cellspacing="0" border="0" style="margin-top:14px"><tr><td>
+<img src="${uri}" width="92" height="92" alt="Save my contact" style="display:block;width:92px;height:92px;border:0"/>
+<div style="font-family:Arial,Helvetica,sans-serif;font-size:9px;color:#888;margin-top:3px">Scan to save my contact</div>
+</td></tr></table>`;
+}
+function downloadVcf(){
+  const blob=new Blob([vcardString()],{type:"text/vcard"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download=(($("name").value||"contact").replace(/\s+/g,"-").toLowerCase())+".vcf"; a.click(); toast("vCard downloaded");
+}
+
+/* ---------- logo + columns ---------- */
+function logoImgHtml(size){
+  const treatment=$("logoTreatment").value, hosted=$("logoUrl").value.trim();
+  const src = hosted || ((treatment==="transparent"&&LOGO_VARIANTS.transparent)?LOGO_VARIANTS.transparent:(LOGO_VARIANTS.transparent||window.LOGO_DATA_URI));
+  const img=`<img src="${src}" alt="${esc($("company").value)}" width="${size}" style="display:block;width:${size}px;height:auto;border:0" />`;
+  if(treatment==="plate" && !hosted)
+    return `<table cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="#ffffff" style="background:#ffffff;border-radius:8px;padding:8px">${img}</td></tr></table>`;
+  return img;
+}
+function leftColumn(){
+  const le=$("leftElement").value, size=$("logoSize").value; let html="";
+  if((le==="headshot"||le==="both") && headshot)
+    html+=`<img src="${headshot}" width="84" height="84" alt="${esc($("name").value)}" style="display:block;width:84px;height:84px;border-radius:50%;object-fit:cover;margin-bottom:12px"/>`;
+  if(le==="logo"||le==="both"||(le==="headshot"&&!headshot)) html+=logoImgHtml(size);
+  html+=socialTable(companySocials,12);
+  html+=qrBlock();
+  return html;
+}
+function bannerBlock(){
+  if(!$("bannerOn").checked||!bannerImg) return "";
+  const url=$("bannerUrl").value.trim(), w=($("bannerWidth").value||"500").replace(/[^0-9]/g,"")||"500", alt=$("bannerAlt").value;
+  const img=`<img src="${bannerImg}" width="${w}" alt="${esc(alt)}" style="display:block;width:${w}px;max-width:100%;height:auto;border:0;border-radius:6px"/>`;
+  return `<div style="margin-top:14px">${url?`<a href="${esc(url)}" style="text-decoration:none">${img}</a>`:img}</div>`;
+}
+
+/* ---------- build full + compact ---------- */
+function buildSignatureHtml(){
+  const name=$("name").value, pronouns=$("pronouns").value.trim(), title=$("title").value, title2=$("title2").value.trim();
+  const company=$("company").value, tagline=$("tagline").value.trim();
+  const nameColor=$("nameColor").value, linkColor=$("linkColor").value;
+  const webText=$("webText").value, webUrl=$("webUrl").value, email=$("email").value;
+
+  let lines="";
+  phones.filter(p=>(p.value||"").trim()).forEach(p=>{
+    lines+=`<div style="margin:0 0 1px"><span style="color:${linkColor};font-weight:bold">${esc(p.label)}:</span> <a href="tel:${esc(p.tel)}" style="color:${linkColor};text-decoration:none">${esc(p.value)}</a></div>`;
+  });
+  offices.filter(o=>o.on&&(o.value||"").trim()).forEach(o=>{
+    lines+=`<div style="margin:0 0 1px"><span style="color:${linkColor};font-weight:bold">${esc(o.label)}:</span> <span style="color:${linkColor}">${esc(o.value)}</span></div>`;
+  });
+  if(webText.trim()) lines+=`<div style="margin:3px 0 1px"><a href="${esc(webUrl)}" style="color:${linkColor};text-decoration:underline">${esc(webText)}</a></div>`;
+  if(email.trim()) lines+=`<div style="margin:0"><a href="mailto:${esc(email)}" style="color:${linkColor};text-decoration:underline">${esc(email)}</a></div>`;
+
+  const nameHtml=esc(name||"Your Name")+(pronouns?` <span style="font-size:12px;font-weight:normal;color:#888">(${esc(pronouns)})</span>`:"");
+  const title2Html=title2?`<div style="font-size:12px;color:#555;margin:0 0 1px">${esc(title2)}</div>`:"";
+  const taglineHtml=tagline?`<div style="font-size:12px;font-style:italic;color:#777;margin:6px 0 0">${esc(tagline)}</div>`:"";
+
+  const main=`<table cellpadding="0" cellspacing="0" border="0" style="font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.4;color:#222"><tr>
+<td style="vertical-align:top;padding:0 22px 0 0">
+  ${leftColumn()}
+</td>
+<td style="vertical-align:top;border-left:1px solid #d9d9d9;padding:0 0 0 22px">
+  <div style="font-size:18px;font-weight:bold;color:${nameColor};margin:0 0 2px">${nameHtml}</div>
+  <div style="font-size:13px;color:#222;margin:0 0 1px">${esc(title||"Your Title")}</div>
+  ${title2Html}
+  <div style="font-size:13px;color:#222;margin:0 0 8px">${esc(company)}</div>
+  ${lines}
+  ${socialTable(personalSocials,12)}
+  ${ctaButton()}
+  ${taglineHtml}
+</td></tr></table>`;
+
+  let out=main+bannerBlock();
+  if($("disclaimerOn").checked && $("disclaimer").value.trim())
+    out+=`<div style="font-family:Arial,Helvetica,sans-serif;font-size:9.5px;line-height:1.45;color:#9a9a9a;margin-top:12px;max-width:560px">${esc($("disclaimer").value.trim())}</div>`;
+  return out;
+}
+function buildCompactHtml(){
+  const name=$("name").value||"Your Name", title=$("title").value||"Your Title", title2=$("title2").value.trim();
+  const company=$("company").value, nameColor=$("nameColor").value, linkColor=$("linkColor").value;
+  const webText=$("webText").value, webUrl=$("webUrl").value;
+  const titleLine=[esc(title),title2?esc(title2):""].filter(Boolean).join(" · ");
+  return `<table cellpadding="0" cellspacing="0" border="0" style="font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.35;color:#222"><tr>
+<td style="vertical-align:middle;padding:0 14px 0 0">${logoImgHtml(64)}</td>
+<td style="vertical-align:middle;border-left:1px solid #d9d9d9;padding:0 0 0 14px">
+  <div style="font-size:15px;font-weight:bold;color:${nameColor}">${esc(name)}</div>
+  <div style="font-size:12px;color:#222">${titleLine}</div>
+  <div style="font-size:12px;color:#222">${esc(company)}${webText.trim()?` &nbsp;·&nbsp; <a href="${esc(webUrl)}" style="color:${linkColor};text-decoration:none">${esc(webText)}</a>`:""}</div>
+</td></tr></table>`;
+}
+
+function build(){
+  const html=(variant==="compact")?buildCompactHtml():buildSignatureHtml();
+  $("sigMount").innerHTML=html; window.__sigHtml=html;
+}
+
+/* ---------- preview controls ---------- */
+function setBg(mode){ $("previewCard").classList.toggle("dark",mode==="dark"); $("bgLight").classList.toggle("on",mode==="light"); $("bgDark").classList.toggle("on",mode==="dark"); }
+function setVariant(v){ variant=v; $("varFull").classList.toggle("on",v==="full"); $("varCompact").classList.toggle("on",v==="compact"); build(); }
+
+/* ---------- copy / export ---------- */
+function toast(m){const t=$("toast");t.textContent=m;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1900);}
+async function copyRich(){
+  const html=window.__sigHtml;
+  try{
+    await navigator.clipboard.write([new ClipboardItem({"text/html":new Blob([html],{type:"text/html"}),"text/plain":new Blob([$("sigMount").innerText],{type:"text/plain"})})]);
+    toast((variant==="compact"?"Compact":"Full")+" signature copied — paste with ⌘V");
+  }catch(e){
+    const r=document.createRange(); r.selectNode($("sigMount"));
+    const s=getSelection(); s.removeAllRanges(); s.addRange(r); document.execCommand("copy"); s.removeAllRanges();
+    toast("Signature copied — paste with ⌘V");
+  }
+}
+async function openGmailCompose(){ await copyRich(); window.open("https://mail.google.com/mail/?view=cm&fs=1&tf=1","_blank"); toast("Compose opened — paste with ⌘V into the body"); }
+async function copyHtml(){ try{await navigator.clipboard.writeText(window.__sigHtml);toast("HTML source copied");}catch(e){toast("Copy failed — use Download");} }
+function downloadHtml(){
+  const blob=new Blob([`<!doctype html><meta charset="utf-8">`+window.__sigHtml],{type:"text/html"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download=(($("name").value||"signature").replace(/\s+/g,"-").toLowerCase())+"-signature.html"; a.click(); toast("Downloaded");
+}
+
+/* ---------- state ---------- */
+function applyState(d){
+  d=d||COMPANY_DEFAULTS;
+  TEXTF.forEach(f=>{ if(d[f]!=null)$(f).value=d[f]; });
+  CHECKF.forEach(f=>{ $(f).checked=!!d[f]; });
+  $("lockBrand").checked = d.locked!==false;
+  phones=JSON.parse(JSON.stringify(d.phones||COMPANY_DEFAULTS.phones));
+  offices=JSON.parse(JSON.stringify(d.offices||COMPANY_DEFAULTS.offices));
+  companySocials=JSON.parse(JSON.stringify(d.companySocials||COMPANY_DEFAULTS.companySocials));
+  personalSocials=JSON.parse(JSON.stringify(d.personalSocials||[]));
+  headshot=d.headshot||""; bannerImg=d.bannerImg||"";
+  renderPhones(); renderOffices(); renderSocials("company"); renderSocials("personal");
+  renderHeadshotPrev(); renderBannerPrev(); ctaHint(); applyLock();
+}
+
+function resetToStandard(){
+  if(!confirm("Start over from the 10 Lives standard template? This clears your changes."))return;
+  applyState(COMPANY_DEFAULTS); build(); toast("Started over from the standard");
+}
+
+/* ---------- init ---------- */
+[...TEXTF,...CHECKF].forEach(id=>$(id).addEventListener("input",build));
+processLogo(()=>build());
+applyState(COMPANY_DEFAULTS);
+build();
+</script>
+</body>
+</html>
