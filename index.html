@@ -4,6 +4,9 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>10 Lives Studios — Email Signature Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,550;0,600;0,650;0,700;1,400&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#0f1115; --panel:#171a21; --panel2:#1d212b; --border:#2a2f3a;
@@ -11,7 +14,7 @@
     --ok:#2f9e60; --radius:12px;
   }
   *{box-sizing:border-box}
-  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);}
+  body{margin:0;font-family:'Poppins',sans-serif;background:var(--bg);color:var(--text);}
   header{padding:18px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;position:sticky;top:0;background:rgba(15,17,21,.92);backdrop-filter:blur(8px);z-index:10}
   header img{height:34px;width:auto;background:#fff;border-radius:6px;padding:3px}
   header h1{font-size:16px;margin:0;font-weight:650;letter-spacing:.2px}
@@ -506,7 +509,7 @@ function ctaButton(){
   if(!url) return "";
   return `<table cellpadding="0" cellspacing="0" border="0" style="margin-top:13px"><tr>
 <td bgcolor="#222222" style="background:#222222;border-radius:6px">
-<a href="${esc(url)}" style="display:inline-block;padding:9px 16px;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:6px">${esc(label)} →</a>
+<a href="${esc(url)}" style="display:inline-block;padding:9px 16px;font-family:'Poppins',Arial,Helvetica,sans-serif;font-size:12px;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:6px">${esc(label)} →</a>
 </td></tr></table>`;
 }
 
@@ -529,7 +532,7 @@ function qrBlock(){
   const uri=qrDataUri(vcardString()); if(!uri) return "";
   return `<table cellpadding="0" cellspacing="0" border="0" style="margin-top:14px"><tr><td>
 <img src="${uri}" width="92" height="92" alt="Save my contact" style="display:block;width:92px;height:92px;border:0"/>
-<div style="font-family:Arial,Helvetica,sans-serif;font-size:9px;color:#888;margin-top:3px">Scan to save my contact</div>
+<div style="font-family:'Poppins',Arial,Helvetica,sans-serif;font-size:9px;color:#888;margin-top:3px">Scan to save my contact</div>
 </td></tr></table>`;
 }
 function downloadVcf(){
@@ -584,7 +587,7 @@ function buildSignatureHtml(){
   const title2Html=title2?`<div style="font-size:12px;color:#555;margin:0 0 1px">${esc(title2)}</div>`:"";
   const taglineHtml=tagline?`<div style="font-size:12px;font-style:italic;color:#777;margin:6px 0 0">${esc(tagline)}</div>`:"";
 
-  const main=`<table cellpadding="0" cellspacing="0" border="0" style="font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.4;color:#222"><tr>
+  const main=`<table cellpadding="0" cellspacing="0" border="0" style="font-family:'Poppins',Arial,Helvetica,sans-serif;font-size:12px;line-height:1.4;color:#222"><tr>
 <td style="vertical-align:top;padding:0 22px 0 0">
   ${leftColumn()}
 </td>
@@ -601,7 +604,7 @@ function buildSignatureHtml(){
 
   let out=main+bannerBlock();
   if($("disclaimerOn").checked && $("disclaimer").value.trim())
-    out+=`<div style="font-family:Arial,Helvetica,sans-serif;font-size:9.5px;line-height:1.45;color:#9a9a9a;margin-top:12px;max-width:560px">${esc($("disclaimer").value.trim())}</div>`;
+    out+=`<div style="font-family:'Poppins',Arial,Helvetica,sans-serif;font-size:9.5px;line-height:1.45;color:#9a9a9a;margin-top:12px;max-width:560px">${esc($("disclaimer").value.trim())}</div>`;
   return out;
 }
 function buildCompactHtml(){
@@ -609,7 +612,7 @@ function buildCompactHtml(){
   const company=$("company").value, nameColor=$("nameColor").value, linkColor=$("linkColor").value;
   const webText=$("webText").value, webUrl=$("webUrl").value;
   const titleLine=[esc(title),title2?esc(title2):""].filter(Boolean).join(" · ");
-  return `<table cellpadding="0" cellspacing="0" border="0" style="font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.35;color:#222"><tr>
+  return `<table cellpadding="0" cellspacing="0" border="0" style="font-family:'Poppins',Arial,Helvetica,sans-serif;font-size:12px;line-height:1.35;color:#222"><tr>
 <td style="vertical-align:middle;padding:0 14px 0 0">${logoImgHtml(64)}</td>
 <td style="vertical-align:middle;border-left:1px solid #d9d9d9;padding:0 0 0 14px">
   <div style="font-size:15px;font-weight:bold;color:${nameColor}">${esc(name)}</div>
