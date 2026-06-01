@@ -326,7 +326,13 @@ const LOCK_INPUTS=["company","webText","webUrl","nameColor","linkColor","logoTre
 if (window.LOGO_DATA_URI) $("brandLogo").src = window.LOGO_DATA_URI;
 
 /* ---------- logo variants (transparent + white) ---------- */
-let LOGO_VARIANTS = { original: window.LOGO_DATA_URI||"", transparent:null, white:null };
+let LOGO_VARIANTS = { original: window.LOGO_DATA_URI||"", transparent:null, white:null, plate:null };
+function roundRectPath(ctx,x,y,w,h,r){
+  if(ctx.roundRect){ ctx.beginPath(); ctx.roundRect(x,y,w,h,r); return; }
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
 function processLogo(done){
   if(!window.LOGO_DATA_URI){ done&&done(); return; }
   const img=new Image();
@@ -344,6 +350,13 @@ function processLogo(done){
     x.putImageData(id,0,0); x2.putImageData(id2,0,0);
     LOGO_VARIANTS.transparent=c.toDataURL("image/png");
     LOGO_VARIANTS.white=c2.toDataURL("image/png");
+    // White "plate" variant — same baked-in white background as the committed
+    // logo-email-plate.png, so the local preview matches the pasted result.
+    const pad=Math.round(Math.max(w,h)*0.1), rad=Math.round(Math.max(w,h)*0.055);
+    const c3=document.createElement("canvas");c3.width=w+pad*2;c3.height=h+pad*2;const x3=c3.getContext("2d");
+    roundRectPath(x3,0,0,c3.width,c3.height,rad); x3.fillStyle="#fff"; x3.fill();
+    x3.drawImage(c,pad,pad);
+    LOGO_VARIANTS.plate=c3.toDataURL("image/png");
     done&&done();
   };
   img.onerror=function(){ done&&done(); };
@@ -553,14 +566,19 @@ function downloadVcf(){
 /* ---------- logo + columns ---------- */
 function logoImgHtml(size){
   const treatment=$("logoTreatment").value, hosted=$("logoUrl").value.trim();
-  // Prefer an explicit hosted logo, then the committed transparent PNG (so Gmail
-  // can load it); fall back to the canvas data URI only for local preview.
-  const src = hosted || (ONLINE ? assetUrl("logo-email.png")
-    : ((treatment==="transparent"&&LOGO_VARIANTS.transparent)?LOGO_VARIANTS.transparent:(LOGO_VARIANTS.transparent||window.LOGO_DATA_URI)));
-  const img=`<img src="${src}" alt="${esc($("company").value)}" width="${size}" style="display:block;width:${size}px;height:auto;border:0" />`;
-  if(treatment==="plate" && !hosted)
-    return `<table cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="#ffffff" style="background:#ffffff;border-radius:8px;padding:8px">${img}</td></tr></table>`;
-  return img;
+  const plate = treatment==="plate" && !hosted;
+  // For the "plate" treatment the white background is baked into the PNG
+  // itself. Gmail's dark mode recolors HTML/CSS backgrounds — a
+  // <td bgcolor="#ffffff"> gets darkened and the black logo vanishes — but it
+  // never touches the pixels of an image, so a baked-in white plate stays
+  // white in light AND dark mode everywhere. Prefer an explicit hosted logo,
+  // then the committed PNG (so Gmail can load it); fall back to the canvas data
+  // URI only for local preview.
+  const src = hosted
+    || (ONLINE ? assetUrl(plate ? "logo-email-plate.png" : "logo-email.png")
+      : (plate ? (LOGO_VARIANTS.plate||LOGO_VARIANTS.transparent||window.LOGO_DATA_URI)
+        : ((treatment==="transparent"&&LOGO_VARIANTS.transparent)?LOGO_VARIANTS.transparent:(LOGO_VARIANTS.transparent||window.LOGO_DATA_URI))));
+  return `<img src="${src}" alt="${esc($("company").value)}" width="${size}" style="display:block;width:${size}px;height:auto;border:0" />`;
 }
 function leftColumn(){
   const le=$("leftElement").value, size=$("logoSize").value; let html="";
