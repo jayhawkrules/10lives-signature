@@ -32,9 +32,9 @@ Claude edits the file, pushes it, and confirms it's live. You don't touch anythi
 5. Wait ~30 seconds — the live site updates itself.
 
 ### 3. Edit locally on the Mac
-The repo lives at `~/10lives-signature`.
+The repo lives at `~/GitHub/10lives-signature`.
 ```bash
-cd ~/10lives-signature
+cd ~/GitHub/10lives-signature
 # edit index.html (or files in assets/)
 git add -A
 git commit -m "Describe your change"
