@@ -161,7 +161,7 @@
     <div class="group">
       <h2>Save-my-contact <span class="pill">vCard / QR</span></h2>
       <label class="chk"><input type="checkbox" id="qrOn" /><span class="txt">Show a QR code people can scan to save my contact</span></label>
-      <div class="hint">The QR encodes a digital business card (name, title, phones, email, website) — scanning it on a phone offers to add you to Contacts. Nothing is hosted; it's built from the fields above.</div>
+      <div class="hint">The QR encodes a digital business card (name, title, phones, email, website) — scanning it on a phone offers to add you to Contacts. Nothing is hosted; it's built from the fields above. <b>Note:</b> the QR is an embedded image, so Gmail removes it on paste — it shows in the preview and the downloaded .html, not in a Gmail signature.</div>
       <button class="btn sm ghost" onclick="downloadVcf()">⬇ Download my .vcf (to test)</button>
     </div>
 
@@ -186,6 +186,9 @@
       <label>Banner image</label>
       <input type="file" id="bannerFile" accept="image/*" onchange="loadBanner(this)" style="font-size:12px;margin-bottom:8px" />
       <div id="bannerPrev"></div>
+      <label>…or hosted banner image URL (needed for Gmail)</label>
+      <input type="text" id="bannerHosted" placeholder="https://…/banner.png" />
+      <div class="hint" id="bannerWarn"></div>
       <div class="two">
         <div><label>Click-through link</label><input type="text" id="bannerUrl" placeholder="https://…" /></div>
         <div><label>Width (px)</label><input type="text" id="bannerWidth" placeholder="500" /></div>
@@ -201,6 +204,9 @@
       <label>Headshot (optional)</label>
       <input type="file" id="headshotFile" accept="image/*" onchange="loadHeadshot(this)" style="font-size:12px;margin-bottom:8px" />
       <div id="headshotPrev"></div>
+      <label>…or hosted headshot URL (needed for Gmail)</label>
+      <input type="text" id="headshotHosted" placeholder="https://…/headshot.jpg" />
+      <div class="hint" id="headshotWarn"></div>
       <label>Logo treatment <span id="lockLogo"></span></label>
       <select id="logoTreatment">
         <option value="plate">White plate — safe in light &amp; dark mode (recommended)</option>
@@ -278,6 +284,7 @@
 <script src="assets/qrcode.js"></script>
 <script>
 const $ = id => document.getElementById(id);
+function safeUrl(u){ u=(u||"").trim(); return /^(https?:|mailto:|tel:)/i.test(u)?u:(u&&!/^[a-z][a-z0-9+.-]*:/i.test(u)?"https://"+u.replace(/^\/+/,""):""); }
 function esc(s){return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 
 /* ============================================================
@@ -292,7 +299,7 @@ const COMPANY_DEFAULTS = {
   leftElement:"logo",
   ctaOn:false, ctaLabel:"Book a meeting", ctaUrl:"", ctaType:"google",
   qrOn:false,
-  bannerOn:false, bannerUrl:"", bannerWidth:"500", bannerAlt:"", bannerImg:"",
+  bannerOn:false, bannerUrl:"", bannerHosted:"", headshotHosted:"", bannerWidth:"500", bannerAlt:"", bannerImg:"",
   disclaimerOn:false,
   disclaimer:"This email and any attachments are confidential and intended solely for the named recipient. If you have received it in error, please notify the sender and delete it. © 10 Lives Studios.",
   phones:[ {label:"Mobile", value:"", tel:""} ],
@@ -318,7 +325,7 @@ let phones=[], offices=[], companySocials=[], personalSocials=[], headshot="", b
 let variant="full";
 const TEXTF=["name","pronouns","title","title2","company","tagline","webText","webUrl","email",
   "nameColor","linkColor","logoSize","logoUrl","logoTreatment","leftElement","ctaLabel","ctaUrl","ctaType",
-  "bannerUrl","bannerWidth","bannerAlt","disclaimer"];
+  "bannerUrl","bannerWidth","bannerAlt","disclaimer","headshotHosted","bannerHosted"];
 const CHECKF=["ctaOn","qrOn","bannerOn","disclaimerOn"];
 // fields disabled when brand lock is on
 const LOCK_INPUTS=["company","webText","webUrl","nameColor","linkColor","logoTreatment","logoUrl"];
@@ -472,7 +479,7 @@ function addSocial(kind){ listFor(kind).push({platform:"instagram",url:"",on:tru
 function socialTable(list,topMargin){
   const items=list.filter(s=>s.on!==false && (s.url||"").trim() && window.BRANDS[s.platform]);
   if(!items.length) return "";
-  const cells=items.map(s=>`<td style="padding:0 7px 0 0"><a href="${esc(normalizeSocialUrl(s.platform,s.url))}" style="text-decoration:none"><img src="${iconSrc(s.platform)}" width="22" height="22" alt="${esc(window.BRANDS[s.platform].label)}" style="display:block;width:22px;height:22px;border:0"/></a></td>`).join("");
+  const cells=items.map(s=>`<td style="padding:0 7px 0 0"><a href="${esc(safeUrl(normalizeSocialUrl(s.platform,s.url)))}" style="text-decoration:none"><img src="${iconSrc(s.platform)}" width="22" height="22" alt="${esc(window.BRANDS[s.platform].label)}" style="display:block;width:22px;height:22px;border:0"/></a></td>`).join("");
   return `<table cellpadding="0" cellspacing="0" border="0" style="margin-top:${topMargin||12}px"><tr>${cells}</tr></table>`;
 }
 
@@ -512,6 +519,17 @@ function renderBannerPrev(){
     ? `<div style="margin:0 0 12px"><img src="${bannerImg}" style="max-width:100%;border-radius:6px;border:1px solid var(--border)"/><div style="margin-top:6px"><button class="btn sm del" onclick="bannerImg='';renderBannerPrev();build()">Remove image</button></div></div>` : "";
 }
 
+/* Gmail removes embedded (data:) images when a signature is pasted, so an
+   uploaded file only survives if a hosted https URL is supplied instead. */
+function headshotSrc(){ const h=$("headshotHosted").value.trim(); return /^https:\/\//i.test(h)?h:headshot; }
+function bannerSrc(){ const h=$("bannerHosted").value.trim(); return /^https:\/\//i.test(h)?h:bannerImg; }
+const GMAIL_WARN='⚠ <b>Gmail will drop this image</b> — uploaded images are embedded in the signature, and Gmail removes embedded images on paste. Paste a hosted <b>https://</b> image URL above for it to show in Gmail.';
+function imageWarnings(){
+  const le=$("leftElement").value;
+  $("headshotWarn").innerHTML = (headshot && (le!=="logo") && !/^https:\/\//i.test($("headshotHosted").value.trim())) ? GMAIL_WARN : "";
+  $("bannerWarn").innerHTML = (bannerImg && $("bannerOn").checked && !/^https:\/\//i.test($("bannerHosted").value.trim())) ? GMAIL_WARN : "";
+}
+
 /* ---------- CTA ---------- */
 function ctaHint(){
   const t=$("ctaType").value, el=$("ctaHelp");
@@ -527,7 +545,7 @@ function ctaHint(){
 }
 function ctaButton(){
   if(!$("ctaOn").checked) return "";
-  const url=$("ctaUrl").value.trim(); const label=($("ctaLabel").value.trim()||"Book a meeting");
+  const url=safeUrl($("ctaUrl").value); const label=($("ctaLabel").value.trim()||"Book a meeting");
   if(!url) return "";
   return `<table cellpadding="0" cellspacing="0" border="0" style="margin-top:13px"><tr>
 <td bgcolor="#222222" style="background:#222222;border-radius:6px">
@@ -536,17 +554,18 @@ function ctaButton(){
 }
 
 /* ---------- vCard + QR ---------- */
+function vEsc(s){ return String(s||"").replace(/\\/g,"\\\\").replace(/\n/g,"\\n").replace(/([,;])/g,"\\$1"); }
 function vcardString(){
   const name=($("name").value||"").trim(); const parts=name.split(/\s+/);
   const last=parts.length>1?parts.pop():""; const first=parts.join(" ");
   let v="BEGIN:VCARD\nVERSION:3.0\n";
-  v+=`N:${last};${first};;;\nFN:${name}\n`;
-  if($("company").value) v+=`ORG:${$("company").value}\n`;
-  const ti=[$("title").value,$("title2").value].filter(s=>s&&s.trim()).join(", "); if(ti) v+=`TITLE:${ti}\n`;
+  v+=`N:${vEsc(last)};${vEsc(first)};;;\nFN:${vEsc(name)}\n`;
+  if($("company").value) v+=`ORG:${vEsc($("company").value)}\n`;
+  const ti=[$("title").value,$("title2").value].filter(s=>s&&s.trim()).join(", "); if(ti) v+=`TITLE:${vEsc(ti)}\n`;
   phones.filter(p=>(p.value||"").trim()).forEach(p=>{ v+=`TEL;TYPE=CELL:${p.tel||p.value}\n`; });
   if($("email").value) v+=`EMAIL;TYPE=WORK:${$("email").value}\n`;
   if($("webUrl").value) v+=`URL:${$("webUrl").value}\n`;
-  v+="END:VCARD"; return v;
+  v+="END:VCARD"; return v.replace(/\n/g,"\r\n");
 }
 function qrDataUri(text){ try{ const t=qrcode(0,'M'); t.addData(text); t.make(); return t.createDataURL(4,8);}catch(e){return "";} }
 function qrBlock(){
@@ -582,17 +601,19 @@ function logoImgHtml(size){
 }
 function leftColumn(){
   const le=$("leftElement").value, size=$("logoSize").value; let html="";
-  if((le==="headshot"||le==="both") && headshot)
-    html+=`<img src="${headshot}" width="84" height="84" alt="${esc($("name").value)}" style="display:block;width:84px;height:84px;border-radius:50%;object-fit:cover;margin-bottom:12px"/>`;
-  if(le==="logo"||le==="both"||(le==="headshot"&&!headshot)) html+=logoImgHtml(size);
+  const hs=headshotSrc();
+  if((le==="headshot"||le==="both") && hs)
+    html+=`<img src="${esc(hs)}" width="84" height="84" alt="${esc($("name").value)}" style="display:block;width:84px;height:84px;border-radius:50%;object-fit:cover;margin-bottom:12px"/>`;
+  if(le==="logo"||le==="both"||(le==="headshot"&&!hs)) html+=logoImgHtml(size);
   html+=socialTable(companySocials,12);
   html+=qrBlock();
   return html;
 }
 function bannerBlock(){
-  if(!$("bannerOn").checked||!bannerImg) return "";
-  const url=$("bannerUrl").value.trim(), w=($("bannerWidth").value||"500").replace(/[^0-9]/g,"")||"500", alt=$("bannerAlt").value;
-  const img=`<img src="${bannerImg}" width="${w}" alt="${esc(alt)}" style="display:block;width:${w}px;max-width:100%;height:auto;border:0;border-radius:6px"/>`;
+  const src=bannerSrc();
+  if(!$("bannerOn").checked||!src) return "";
+  const url=safeUrl($("bannerUrl").value), w=($("bannerWidth").value||"500").replace(/[^0-9]/g,"")||"500", alt=$("bannerAlt").value;
+  const img=`<img src="${esc(src)}" width="${w}" alt="${esc(alt)}" style="display:block;width:${w}px;max-width:100%;height:auto;border:0;border-radius:6px"/>`;
   return `<div style="margin-top:14px">${url?`<a href="${esc(url)}" style="text-decoration:none">${img}</a>`:img}</div>`;
 }
 
@@ -610,7 +631,7 @@ function buildSignatureHtml(){
   offices.filter(o=>o.on&&(o.value||"").trim()).forEach(o=>{
     lines+=`<div style="margin:0 0 1px"><span style="color:${linkColor};font-weight:bold">${esc(o.label)}:</span> <span style="color:${linkColor}">${esc(o.value)}</span></div>`;
   });
-  if(webText.trim()) lines+=`<div style="margin:3px 0 1px"><a href="${esc(webUrl)}" style="color:${linkColor};text-decoration:underline">${esc(webText)}</a></div>`;
+  if(webText.trim()) lines+=`<div style="margin:3px 0 1px"><a href="${esc(safeUrl(webUrl))}" style="color:${linkColor};text-decoration:underline">${esc(webText)}</a></div>`;
   if(email.trim()) lines+=`<div style="margin:0"><a href="mailto:${esc(email)}" style="color:${linkColor};text-decoration:underline">${esc(email)}</a></div>`;
 
   const nameHtml=esc(name||"Your Name")+(pronouns?` <span style="font-size:12px;font-weight:normal;color:#888">(${esc(pronouns)})</span>`:"");
@@ -647,13 +668,13 @@ function buildCompactHtml(){
 <td style="vertical-align:middle;border-left:1px solid #d9d9d9;padding:0 0 0 14px">
   <div style="font-size:15px;font-weight:bold;color:${nameColor}">${esc(name)}</div>
   <div style="font-size:12px;color:#222">${titleLine}</div>
-  <div style="font-size:12px;color:#222">${esc(company)}${webText.trim()?` &nbsp;·&nbsp; <a href="${esc(webUrl)}" style="color:${linkColor};text-decoration:none">${esc(webText)}</a>`:""}</div>
+  <div style="font-size:12px;color:#222">${esc(company)}${webText.trim()?` &nbsp;·&nbsp; <a href="${esc(safeUrl(webUrl))}" style="color:${linkColor};text-decoration:none">${esc(webText)}</a>`:""}</div>
 </td></tr></table>`;
 }
 
 function build(){
   const html=(variant==="compact")?buildCompactHtml():buildSignatureHtml();
-  $("sigMount").innerHTML=html; window.__sigHtml=html;
+  $("sigMount").innerHTML=html; window.__sigHtml=html; imageWarnings();
 }
 
 /* ---------- preview controls ---------- */
