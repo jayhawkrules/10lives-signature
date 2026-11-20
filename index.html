@@ -97,7 +97,7 @@
     <div class="banner">
       ▸ You're starting from the <b>10 Lives standard template</b>. Just change your name, title and contact details, copy your signature into Gmail, and you're done — <b>nothing is saved</b>. Hit <b>Start over</b> to clear your changes.
       <div style="margin-top:10px"><button class="btn sm warn" onclick="resetToStandard()">↺ Start over</button></div>
-      <div class="dm-note">◐ <b>Made your signature before 1 June 2026, or picked the Transparent logo?</b> Copy it again with the <b>White plate</b> logo so it stays visible when Gmail is in dark mode.</div>
+      <div class="dm-note">◐ <b>Made your signature before this update, or it shows a dark box or blue addresses in Gmail?</b> Copy it again and paste it into Gmail.</div>
     </div>
 
     <div class="lockbar">
@@ -214,7 +214,6 @@
       <label>Logo treatment <span id="lockLogo"></span></label>
       <select id="logoTreatment">
         <option value="plate">White plate — safe in light &amp; dark mode (recommended)</option>
-        <option value="transparent">Transparent — can disappear in dark mode (not recommended)</option>
       </select>
       <div class="hint">Your logo is solid black, so it can vanish on dark backgrounds. The <b>white plate</b> keeps it visible everywhere. Use the <b>Light / Dark</b> toggle over the preview to check.</div>
       <div class="hint" id="logoWarn"></div>
@@ -543,10 +542,9 @@ function imageWarnings(){
   $("headshotWarn").innerHTML = (headshot && (le!=="logo") && !/^https:\/\//i.test($("headshotHosted").value.trim())) ? GMAIL_WARN : "";
   $("bannerWarn").innerHTML = (bannerImg && $("bannerOn").checked && !/^https:\/\//i.test($("bannerHosted").value.trim())) ? GMAIL_WARN : "";
   // Dark mode: the logo only survives if its white background is part of the image itself.
-  const treatment=$("logoTreatment").value, hostedLogo=$("logoUrl").value.trim();
-  $("logoWarn").innerHTML = treatment==="transparent"
-    ? '<span class="warnbox">⚠ <b>Transparent can disappear in dark mode.</b> The logo is solid black, so on a dark Gmail screen it can vanish completely. Choose <b>White plate</b> unless you only ever read mail in light mode.</span>' : "";
-  $("logoUrlWarn").innerHTML = (hostedLogo && treatment==="plate")
+  const hostedLogo=$("logoUrl").value.trim();
+  $("logoWarn").innerHTML = "";
+  $("logoUrlWarn").innerHTML = hostedLogo
     ? '<span class="warnbox">⚠ <b>Your hosted logo is used exactly as it is.</b> The white plate can\'t be added to an image on another site, so that image itself must have a <b>solid white background</b> (not transparent), or it can vanish in dark mode. Check it with the <b>Dark</b> preview.</span>' : "";
 }
 
@@ -604,8 +602,8 @@ function downloadVcf(){
 
 /* ---------- logo + columns ---------- */
 function logoImgHtml(size){
-  const treatment=$("logoTreatment").value, hosted=$("logoUrl").value.trim();
-  const plate = treatment==="plate" && !hosted;
+  const hosted=$("logoUrl").value.trim();
+  const plate = !hosted; // white plate is locked: no transparent export
   // For the "plate" treatment the white background is baked into the PNG
   // itself. Gmail's dark mode recolors HTML/CSS backgrounds — a
   // <td bgcolor="#ffffff"> gets darkened and the black logo vanishes — but it
@@ -615,8 +613,7 @@ function logoImgHtml(size){
   // URI only for local preview.
   const src = hosted
     || (ONLINE ? assetUrl(plate ? "logo-email-plate.png" : "logo-email.png")
-      : (plate ? (LOGO_VARIANTS.plate||LOGO_VARIANTS.transparent||window.LOGO_DATA_URI)
-        : ((treatment==="transparent"&&LOGO_VARIANTS.transparent)?LOGO_VARIANTS.transparent:(LOGO_VARIANTS.transparent||window.LOGO_DATA_URI))));
+      : (LOGO_VARIANTS.plate||LOGO_VARIANTS.transparent||window.LOGO_DATA_URI));
   return `<img src="${src}" alt="${esc($("company").value)}" width="${size}" style="display:block;width:${size}px;height:auto;border:0" />`;
 }
 function leftColumn(){
@@ -638,6 +635,18 @@ function bannerBlock(){
 }
 
 /* ---------- build full + compact ---------- */
+/* Gmail (notably the iOS app) turns street addresses into blue, underlined Maps links.
+   A zero-width space (&#8203;) after the street number, around commas and before every
+   token holding a digit (suite, ZIP, UK postcode) breaks the pattern it matches; it is
+   invisible when rendered. */
+function noAutoLink(v){
+  return (v||"").trim().split(/\s+/).map((t,i)=>{
+    let e=esc(t).replace(/,/g,"&#8203;,&#8203;");
+    if(i>0 && /\d/.test(t)) e="&#8203;"+e;
+    if(i===0 && /^\d+$/.test(t)) e+="&#8203;";
+    return e;
+  }).join(" ");
+}
 function buildSignatureHtml(){
   const name=$("name").value, pronouns=$("pronouns").value.trim(), title=$("title").value, title2=$("title2").value.trim();
   const company=$("company").value, tagline=$("tagline").value.trim();
@@ -649,7 +658,7 @@ function buildSignatureHtml(){
     lines+=`<div style="margin:0 0 1px"><span style="color:${linkColor};font-weight:bold">${esc(p.label)}:</span> <a href="tel:${esc(p.tel)}" style="color:${linkColor};text-decoration:none">${esc(p.value)}</a></div>`;
   });
   offices.filter(o=>o.on&&(o.value||"").trim()).forEach(o=>{
-    lines+=`<div style="margin:0 0 1px"><span style="color:${linkColor};font-weight:bold">${esc(o.label)}:</span> <span style="color:${linkColor}">${esc(o.value)}</span></div>`;
+    lines+=`<div style="margin:0 0 1px"><span style="color:${linkColor};font-weight:bold">${esc(o.label)}:</span> <span style="color:${linkColor};text-decoration:none">${noAutoLink(o.value)}</span></div>`;
   });
   if(webText.trim()) lines+=`<div style="margin:3px 0 1px"><a href="${esc(safeUrl(webUrl))}" style="color:${linkColor};text-decoration:underline">${esc(webText)}</a></div>`;
   if(email.trim()) lines+=`<div style="margin:0"><a href="mailto:${esc(email)}" style="color:${linkColor};text-decoration:underline">${esc(email)}</a></div>`;
